@@ -1,6 +1,6 @@
 # u-lora-async
 
-This is work is based on the raspi-lora port by m. and adds asyncio support for the library.
+This is work is based on the raspi-lora port by [martynwheeler](https://github.com/martynwheeler/u-lora) and adds asyncio support for the library.
 It has been tested on ESP32 with MicroPython v1.23
 
 ## Wiring
@@ -25,12 +25,12 @@ Other pins:
 **INITIALIZATION**
 ```
 LoRa(spi_channel, interrupt, this_address, cs_pin, reset_pin=None, freq=868, tx_power=14,
-    modem_config=ModemConfig.Bw125Cr45Sf128, acks=False, crypto=None)
+    modem_config=ModemConfig.Bw125Cr45Sf128, acks=True, crypto=None)
 ```
 
 **spi_channel** SPI channel, check SPIConfig for preconfigured names, e.g. SPIConfig.rp2_0 for RPi pico channel 0   
 **interrupt** GPIO pin to use for the interrupt  
-**this_address** The address number (0-254) your device will use when sending and receiving packets.  
+**this_address** The address number (0-65025) your device will use when sending and receiving packets.  
 **cs_pin** chip select pin from microcontroller  
 **reset_pin** : the GPIO used to reset the RFM9x if connected  
 **freq** Frequency used by your LoRa radio. Defaults to 868Mhz  
