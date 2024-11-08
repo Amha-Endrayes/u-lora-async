@@ -1,6 +1,7 @@
-# u-lora
+# u-lora-async
 
-This is a port of raspi-lora (https://pypi.org/project/raspi-lora/) for micropython.  I have tested on raspberry pi pico, esp8266, and esp32.  It allows your microcontroller to use an RFM95 radio to communicate.
+This is work is based on the raspi-lora port by m. and adds asyncio support for the library.
+It has been tested on ESP32 with MicroPython v1.23
 
 ## Wiring
 
@@ -67,41 +68,68 @@ There are two examples to test sending and receiving data in the examples folder
 ### Server mode:
 
 Copy the file server.py to your main.py and copy it across together with the library ulora.py to your microcontroller
-
 ```
 from time import sleep
-from ulora import LoRa, ModemConfig, SPIConfig
-
-# This is our callback function that runs when a message is received
-def on_recv(payload):
-    print("From:", payload.header_from)
-    print("Received:", payload.message)
-    print("RSSI: {}; SNR: {}".format(payload.rssi, payload.snr))
+from ulora_new import LoRa, ModemConfig, SPIConfig
+import uasyncio as asyncio
 
 # Lora Parameters
 RFM95_RST = 27
-RFM95_SPIBUS = SPIConfig.rp2_0
-RFM95_CS = 5
-RFM95_INT = 28
-RF95_FREQ = 868.0
-RF95_POW = 20
-CLIENT_ADDRESS = 1
-SERVER_ADDRESS = 2
+RFM95_SPIBUS = SPIConfig.esp32_1
+RFM95_CS = 32
+RFM95_INT = 33
+RF95_FREQ = 433.0
+RF95_POW = 25
+CLIENT_ADDRESS = 1000
+SERVER_ADDRESS = 2000 # << This Device. MAX: 65K (2 Bytes)
 
-# initialise radio
+# Callback function to handle received messages
+async def on_recv(payload):
+    print(f"Received message: {payload.message.decode()}")
+    print(f"From: {payload.header_from}, To: {payload.header_to}, ID: {payload.header_id}, Flags: {payload.header_flags}")
+    print(f"RSSI: {payload.rssi}, SNR: {payload.snr}")
+
+# Initialize radio with the async callback
 lora = LoRa(RFM95_SPIBUS, RFM95_INT, SERVER_ADDRESS, RFM95_CS, 
-            reset_pin=RFM95_RST, freq=RF95_FREQ, tx_power=RF95_POW, acks=True)
+            reset_pin=RFM95_RST, freq=RF95_FREQ, tx_power=RF95_POW, 
+            acks=True)
 
-# set callback
+# Set the callback function
 lora.on_recv = on_recv
+print("Lora Initialized.")
 
-# set to listen continuously
-lora.set_mode_rx()
+# Asynchronous function to continuously receive messages
+async def receive_messages():
+    while True:
+        try:
+            await lora.set_mode_rx()
+            await asyncio.sleep(0.1)
+        except Exception as e:
+            print(f"Error in receive_messages: {e}")
+            await asyncio.sleep(1)
 
-# loop and wait for data
-while True:
-    sleep(0.1)
+# Main function to run the event loop
+async def main():
+    print("Waiting for incoming messages...")
+    receive_task = asyncio.create_task(receive_messages())
+    
+    try:
+        while True:
+            await asyncio.sleep(1)
+    except Exception as e:
+        print(f"Error in main loop: {e}")
+    finally:
+        receive_task.cancel()
+
+# Run the main function
+try:
+    asyncio.run(main())
+except Exception as e:
+    print(f"Fatal error: {e}")
+    lora.close()
 ```
+
+
 
 ### Client mode:
 Copy the file server.py to your main.py and copy it across together with the library ulora.py to your microcontroller
@@ -109,25 +137,75 @@ Copy the file server.py to your main.py and copy it across together with the lib
 ```
 from time import sleep
 from ulora import LoRa, ModemConfig, SPIConfig
+from machine import Pin
+import uasyncio as asyncio
 
 # Lora Parameters
 RFM95_RST = 27
-RFM95_SPIBUS = SPIConfig.rp2_0
-RFM95_CS = 5
-RFM95_INT = 28
-RF95_FREQ = 868.0
-RF95_POW = 20
-CLIENT_ADDRESS = 1
-SERVER_ADDRESS = 2
+RFM95_SPIBUS = SPIConfig.esp32_1
+RFM95_CS = 15
+RFM95_INT = 2
+RF95_FREQ = 433.0
+RF95_POW = 25
+CLIENT_ADDRESS = 1000 # << This Device. MAX: 65K (2 Bytes)
+SERVER_ADDRESS = 2000
 
-# initialise radio
-lora = LoRa(RFM95_SPIBUS, RFM95_INT, CLIENT_ADDRESS, RFM95_CS,
-            reset_pin=RFM95_RST, freq=RF95_FREQ, tx_power=RF95_POW, acks=True)
+# Create an event loop
+loop = asyncio.get_event_loop()
 
+# Initialize client radio
+lora = LoRa(RFM95_SPIBUS, RFM95_INT, CLIENT_ADDRESS, RFM95_CS, 
+            reset_pin=RFM95_RST, freq=RF95_FREQ, tx_power=RF95_POW, 
+            acks=True)
 
-# loop and send data
-while True:
-    lora.send_to_wait("This is a test message", SERVER_ADDRESS)
-    print("sent")
-    sleep(10)
+# Asynchronous function to send a message
+msg_counter = 0
+async def send_message():
+    global msg_counter
+    try:
+        message = f"Hello, LoRa Gateway! | Message Number: {msg_counter}"
+        header_to = SERVER_ADDRESS
+        print(f"Sending message {msg_counter}")
+        
+        # Set shorter timeouts for testing
+        lora.retry_timeout = 1.0  # 1 second timeout
+        lora.send_retries = 3     # 3 retries
+        
+        status = await lora.send_to_wait(message.encode(), header_to)
+        
+        if status:
+            print(f"Message {msg_counter} sent successfully and ACK received")
+            msg_counter += 1
+        else:
+            print(f"Message {msg_counter} failed after all retries")
+    except Exception as e:
+        print(f"Error sending message: {e}")
+
+# Asynchronous function to handle receiving
+async def receive_messages():
+    while True:
+        await lora.set_mode_rx()
+        await asyncio.sleep(0.1)
+
+# Main function to run the event loop
+async def main():
+    # Create the receiver task
+    receiver_task = asyncio.create_task(receive_messages())
+    
+    try:
+        while True:
+            await send_message()
+            await asyncio.sleep(1)
+    except Exception as e:
+        print(f"Error in main loop: {e}")
+    finally:
+        receiver_task.cancel()
+
+# Run the main function
+try:
+    asyncio.run(main())
+except Exception as e:
+    print(f"Fatal error: {e}")
+    # Cleanup
+    lora.close()
 ```
