@@ -211,7 +211,7 @@ except Exception as e:
 ```
 
 # Authors:
-+ [Anne Wood]https://pypi.org/user/annewood/          >> Orginal Author
-+ [Martyn Wheeler]https://github.com/martynwheeler    >> MicroPython Port
-+ [Amha Endrayes]https://github.com/Amha-Endrayes     >> uasyncio Port
++ [Anne Wood](https://pypi.org/user/annewood/)          >> Orginal Author
++ [Martyn Wheeler](https://github.com/martynwheeler)    >> MicroPython Port
++ [Amha Endrayes](https://github.com/Amha-Endrayes)     >> uasyncio Port
 
