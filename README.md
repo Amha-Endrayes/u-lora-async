@@ -210,8 +210,8 @@ except Exception as e:
     lora.close()
 ```
 
-Authors:
-[Anne Wood]https://pypi.org/user/annewood/ -- Orginal Author
-[Martyn Wheeler]https://github.com/martynwheeler -- MicroPython Port
-[Amha Endrayes]https://github.com/Amha-Endrayes -- uasyncio Port
+# Authors:
++ [Anne Wood]https://pypi.org/user/annewood/          >> Orginal Author
++ [Martyn Wheeler]https://github.com/martynwheeler    >> MicroPython Port
++ [Amha Endrayes]https://github.com/Amha-Endrayes     >> uasyncio Port
 
