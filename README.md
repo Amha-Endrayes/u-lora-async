@@ -132,7 +132,7 @@ except Exception as e:
 
 
 ### Client mode:
-Copy the file server.py to your main.py and copy it across together with the library ulora.py to your microcontroller
+On a diffrent device, copy the file client.py to your main.py and move the library ulora.py to your microcontroller
 
 ```
 from time import sleep
@@ -209,3 +209,9 @@ except Exception as e:
     # Cleanup
     lora.close()
 ```
+
+Authors:
+[Anne Wood]https://pypi.org/user/annewood/ -- Orginal Author
+[Martyn Wheeler]https://github.com/martynwheeler -- MicroPython Port
+[Amha Endrayes]https://github.com/Amha-Endrayes -- uasyncio Port
+
