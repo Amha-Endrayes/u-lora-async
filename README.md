@@ -1,6 +1,6 @@
 # u-lora-async
 
-This is work is based on the raspi-lora port by [martynwheeler](https://github.com/martynwheeler/u-lora) and adds asyncio support for the library.
+This work is based on the raspi-lora port by [martynwheeler](https://github.com/martynwheeler/u-lora) and adds asyncio support for the library.
 It has been tested on ESP32 with MicroPython v1.23
 
 ## Wiring
